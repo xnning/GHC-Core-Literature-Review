@@ -17,7 +17,7 @@ WARN_MSG = "%%% !!! WARNING: AUTO GENERATED. DO NOT MODIFY !!! %%%\n"
 
 all: $(MAIN).pdf
 
-$(MAIN).pdf: $(MAIN).mng $(wildcard *.tex) $(AUTOGEN) $(MAIN).bib $(SECTION_LOC)/introduction.tex
+$(MAIN).pdf: $(MAIN).mng $(wildcard *.tex) $(AUTOGEN) $(MAIN).bib $(SECTION_LOC)/introduction.tex $(SECTION_LOC)/implementation.tex
 	@latexmk -pdf $(MAIN).mng
 
 $(RULESFILE): $(OTT_FILES)
