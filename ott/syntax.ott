@@ -1,0 +1,166 @@
+metavar kx {{ tex \mathcal{X} }}, cx {{tex c}}, a {{tex a}} ::=
+
+indexvar i, j, n ::=
+
+grammar
+
+poly, s {{ tex \sigma }} :: 'poly_' ::=
+  | a             ::   :: tvar
+  | t1 -> t2      ::   :: arrow  
+  | bool          ::   :: bool   
+  | char          ::   :: char
+  | int           ::   :: int
+  | int #         ::   :: prim_int {{ tex [[int]]_[[#]] }}
+  | K             ::   :: data_constructor
+  | \/ kx . s     ::   :: kind_polymorphic_type
+  | \/ a : k . s     ::   :: kind_polymorphic_type_named
+  | s k           ::   :: kind_app
+  | ~             ::   :: equality
+  | ~ #           ::   :: equality_prim {{ tex [[~]]_[[#]] }}
+  | ~ p           ::   :: equality_role {{ tex [[~]]_[[p]] }}
+  | s1 ~ s2       ::   :: coercion
+  | k1 ~ k2       ::   :: kind_coercion
+  | s1 ~ ( k , p ) s2 :: :: coercion_role {{ tex [[s1]] [[~]]^[[k]]_[[p]] [[s2]] }}
+  | \/ cx : prop . s  ::   :: co_abs
+  | s |> co       ::   :: ty_cast
+  | s co          ::   :: co_app
+  | k             ::   :: unified
+
+
+k {{ tex \kappa }} :: 'k_' ::=
+  | star          ::   :: star
+  | k1 -> k2      ::   :: arrow
+  | s1 ~ s2       ::   :: eq_constraint
+  | co1 ~ co2     ::   :: eq_constraint_of_constraint
+  | kx            ::   :: kvar
+  | \/ kx . k     ::   :: all
+  | constraint    ::   :: constraint {{ tex \mathrm{Constraint} }}
+  | constraint #  ::   :: constraint_prim {{ tex \mathrm{Constraint_\#} }}
+  | T kl          ::   :: promoted_type_constant
+
+klist, kl {{ tex \overline \kappa }} :: 'k_list_' ::=
+
+GG {{tex \Gamma }} :: 'GG_' ::=
+  | empty         ::   :: empty
+
+coercion, co {{ tex \gamma }} :: 'co_' ::=
+  | kind co       ::   :: kind_co
+  | co1 |> co2    ::   :: coherence
+
+expr, e {{ tex e }} :: 'expr_' ::=
+  | e |> co       ::   :: cast
+
+sort {{ tex \delta }} :: 'sort_' ::=
+  | TY            ::   :: TY {{ tex \mathrm{TY} }}
+  | CO            ::   :: CO {{ tex \mathrm{CO} }}
+  | box           ::   :: box {{ tex \square }}
+
+prop {{ tex \phi }} :: 'prop_' ::=
+  | s1 ~ s2       ::   :: prop
+
+role, p {{tex \rho}} :: 'role_' ::=
+  | N             ::    :: nominal {{ tex \mathrm{N} }}
+  | R             ::    :: rep {{ tex \mathrm{R} }}
+  | P             ::    :: phantom {{ tex \mathrm{P} }}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% DEFINITIONS
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+defns
+ty_judgment :: '' ::=
+
+defn
+GG |-ty s : k  ::  :: fc_kind :: fc_kind_ by
+
+K : s in GG
+empty |- s ~> k
+------------------ :: KLift
+GG |-ty K : k
+
+------------------ :: KEq
+GG |-ty ~ : \/ kx . kx -> kx -> constraint
+
+GG |-ty s : k1
+GG |-co co : k1 ~ k2
+GG |-ty k2 : star
+------------------ :: KCast
+GG |-ty s |> co : k2
+
+defn
+GG |-co co : s1 ~ s2  ::  :: fc_co :: fc_co_ by
+
+GG |-co co : s1 ~ s2
+GG |-ty s1 |> co' : k
+---------------------- :: CT_COH
+GG |-co co |> co' : s1 |> co' ~ s2
+
+GG |-co co : s1 ~ s2
+GG |-ty s1 : k1
+GG |-ty s2 : k2
+--------------------- :: CT_EXT
+GG |-co kind co : k1 ~ k2
+
+defn
+GG |-co co : s1 ~ ( k , p ) s2  ::  :: fc_co_r :: fc_co_r_
+{{ tex [[GG]] [[|-co]] [[co]] : [[s1]] [[~]]^[[k]]_[[p]] [[s2]] }}
+by
+
+defn
+GG |-e e : s  ::  :: fc_typing :: fc_typing_ by
+
+GG |-e e : s1
+GG |-co co : s1 ~ s2
+------------------------- :: Cast
+GG |-e e |> co : s2
+
+GG |-e e : s1
+GG |-co co : s1 ~(k, R) s2
+------------------------- :: Cast_R
+GG |-e e |> co : s2
+
+defn
+GG |-k k : sort  ::  :: kind_valid :: kind_valid_ by
+
+GG |-k k1 : box .. GG |-k kn : box
+empty |-ty T : star -> star
+------------------------------ :: KV_Lift
+GG |-k T kl : box
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% TERMINAL
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+grammar
+
+terminals :: 'terminals_' ::=
+  | bool          ::   :: bool    {{ tex \mathit{Bool} }}
+  | char          ::   :: char    {{ tex \mathit{Char} }}
+  | ->            ::   :: arrow   {{ tex \to }}
+  | ~             ::   :: eq      {{ tex \sim }}
+  | |-            ::   :: vdash   {{ tex \vdash }}
+  | |-ty          ::   :: kinding {{ tex \vdash_{\mathrm{TY} } }}
+  | |-co          ::   :: coercion {{ tex \vdash_{\mathrm{CO} } }}
+  | |-e           ::   :: typing  {{ tex \vdash_{\mathrm{e} } }}
+  | |-k           ::   :: kind_valid  {{ tex \vdash_{\mathrm{k} } }}
+  | :             ::   :: colon   {{ tex : }}
+  | |>            ::   :: cast    {{ tex \blacktriangleright }}
+  | \/            ::   :: forall  {{ tex \forall }}
+  | T             ::   :: type_constant {{ tex \mathrm{T} }}
+  | K             ::   :: data_constructor {{ tex \mathrm{K} }}
+  | in            ::   :: in  {{ tex \in }}
+  | ~>            ::   :: translate {{ tex  \rightsquigarrow }}
+  | empty         ::   :: empty {{tex \emptyset }}
+  | star          ::   :: star {{tex *}}
+  | #             ::   :: primitive
+  | kind          ::   :: kind_coercion {{ tex \mathbf{kind} }}
+
+
+formula :: formula_ ::=
+  | judgement       ::   :: judgement
+  | formula1 .. formulan ::  :: dots
+  | K : s in GG     ::   :: k_in
+  | empty |- s ~> k ::   :: ty_to_ki
+  | empty |-ty T : star -> star :: :: type_constructor {{ tex [[empty]] [[|-ty]] [[T]] : [[star]]^n [[->]] [[star]] }}

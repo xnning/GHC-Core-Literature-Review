@@ -1,0 +1,15 @@
+**/*.log
+**/*.bbl
+**/*.blg
+**/*.toc
+**/*.out
+**/*.fls
+**/*.haux
+**/*.aux
+**/*.fdb_latexmk
+**/*.lof
+**/*.lot
+**/*.loe
+**/*.mng
+**/*.el
+doc/ott-rules.tex

@@ -1,0 +1,73 @@
+\section{$\FCpro$}
+\label{sec:fcpro}
+
+Giving Haskell a Promotion, TLDI'12 \citep{yorgey2012giving}.
+
+\subsection{Motivation}
+
+The \hl{kind system} in Haskell is too 1) permissive: type-level programming in
+Haskell is almost entirely untyped, because the type system has too few kinds
+($[[ star ]], [[ star -> star ]]$, and so on); 2) restrictive: It lacks
+polymorphism.
+
+This paper presents $\FCpro$, which extends \FC with
+\begin{itemize}
+\item Automatic promotion of datatypes to be kinds and data constructors to be
+  types.
+\begin{verbatim}
+data Nat = Zero | Succ Nat
+data Vec :: * -> Nat -> * where
+  VNil  :: Vec a 'Zero
+  VCons :: a -> Vec a n -> Vec a ('Succ n)
+\end{verbatim}
+
+Type \texttt{Nat} is used as a kind, and data constructors \texttt{Zero} and
+\texttt{Succ} are used as types, with a quote notation to avoid ambiguity.
+
+\item Kind polymorphism, for kinds, types, and terms.
+
+\begin{verbatim}
+data EqRefl a b where
+  Refl :: EqRefl a a
+\end{verbatim}
+
+Previously, \verb|EqRefl|$:: [[star -> star -> star]]$, with kind polymorphism
+we have \verb|EqRefl|$:: [[ \/ kx . kx -> kx -> star ]]$
+  
+\end{itemize}
+
+\subsection{Notes}
+
+\begin{itemize}
+\item The formalization distinguish expressions, types, coercions and kinds, but
+  in implementation they are \textit{combined}.
+\item Expressions now include kind abstraction and kind application.
+\item Kinds $[[k]] ::= [[star]] \mid [[k1 -> k2]] \mid$ \hl{$
+    [[constraint]] \mid [[kx]] \mid [[\/kx. k]] \mid [[T kl]] $}, where $[[T]]$
+  is promoted type constant.
+\item Only one sort $[[GG |-k k : box ]]$
+\item Types $[[s]] ::= ...$ \hl{$\mid [[K]] \mid [[\/ kx. s]] \mid [[s k]] \mid[[~]]$}, where
+  $[[K]]$ is promoted data constructors, and $[[~]]$ is equality.
+\item Important rules for promotion:
+  \[ \drule{fc-kind-KLift} \]
+  In this rule, a data constructor $[[K]]$ is treated as a type and has a
+  kinding rule. $[[empty |- s ~> k]]$ turns a type into a kind.
+  \[ \drule{kind-valid-KV-Lift} \]
+  In this rule, a type constructor $[[T]]$ is treated as a kind constructor.
+  This rule is relatively restrictive since the type of $[[T]]$ takes all
+  arguments of kind $[[star]]$ and it needs to be fully saturated.
+\item $\FCpro$ turns the equality from \FC into a type constructor with
+  polymorphic kind:
+  \[ \drule{fc-kind-KEq} \]
+\item Coercions are homogeneous, having type $[[s1 ~ s2]]$, which has kind $[[constraint]]$.
+\item Design principle: no kind equalities.
+\end{itemize}
+
+
+
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "../doc"
+%%% org-ref-default-bibliography: "../doc.bib"
+%%% End:

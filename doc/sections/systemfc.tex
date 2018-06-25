@@ -1,0 +1,41 @@
+\section{\FC}
+
+System F with Type Equality Coercions, TLDI'07 \citep{Sulzmann:2007:SFT:1190315.1190324}.
+
+\subsection{Motivation}
+
+Language designers have begun to experiment with a variety of type systems that
+are difficult or impossible to translate into System F, such as functional
+dependencies, generalized algebraic data types (GADTs), and associated types.
+
+This paper presents \FC, which extends System F with 1) explicit equality
+witnesses; 2) non-parametric type functions.
+
+\subsection{Notes}
+
+\begin{itemize}
+\item The role of coercion in typing:
+  \[ \drule{fc-typing-Cast} \]
+\item The systems merges types and coercions.
+  \begin{itemize}
+  \item Types have judgment $[[ GG |-ty s : k ]]$
+  \item Coercions have judgment $[[ GG |-co co : s1 ~ s2 ]]$. Homogeneous.
+  \end{itemize}
+\item Kinds $[[ k ]] ::= [[star]] \mid [[k1 -> k2]] \mid [[s1 ~ s2]] $.
+\item Sorts $[[ sort ]] ::= [[ TY ]] \mid [[ CO ]]$.
+  \begin{itemize}
+  \item  $[[ TY ]]$ for kind $[[ star ]]$ and $[[ k1 -> k2
+    ]]$;
+  \item  $ [[CO]] $ for $[[ s1 ~ s2 ]]$ and $[[ co1 ~ co2 ]]$.
+  \end{itemize}
+\item Coercions $[[co]]$ are types, $[[s1 ~ s2]]$ are kinds, $[[CO]]$ are sorts.
+  $[[co]] :: [[s1 ~ s2]] :: [[CO]]$.
+\item The meaning of type function is given by axioms.
+\item Type functions are required to be saturated.
+\end{itemize}
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "../doc"
+%%% org-ref-default-bibliography: "../doc.bib"
+%%% End:

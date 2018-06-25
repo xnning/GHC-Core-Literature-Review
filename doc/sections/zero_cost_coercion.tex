@@ -1,0 +1,105 @@
+\section{Safe Zero-cost Coercions for Newtypes}
+
+Safe Zero-cost Coercions for Haskell, ICFP'14
+\citep{Breitner:2014:SZC:2628136.2628141}, JFP'16 \citep{breitner2016safe}.
+
+This work itself is built on Generative Type Abstraction and Type-level
+Computation, POPL'11 \citep{Weirich:2011:GTA:1926385.1926411}.
+
+\subsection{Motivation}
+
+Consider to define a newtype \verb|HTML|
+
+\begin{verbatim}
+newtype HTML = MkHTML String
+
+unHTML :: HTML -> String
+unHTML (MkHTML s) = s
+
+linesH :: HTML -> [HTML]
+linesH h = map MkHTML (lines (unHTML h))
+\end{verbatim}
+
+The runtime cost of \verb|linesH| is inevitable. To avoid that, this paper
+describes safe coercions, with the constraint \verb|Coercible| and the function
+
+\begin{verbatim}
+coerce :: Coercible a b => a -> b
+\end{verbatim}
+
+Then \verb|String -> [String]| and \verb|HTML -> [HTML]| would be coercible and
+the function can be rewritted to
+
+\begin{verbatim}
+linesH :: HTML -> [HTML]
+linesH = coerce lines
+\end{verbatim}
+
+\verb|Coercible| is translated into \FC, augmented with \textit{roles}.
+
+\subsection{Notes}
+
+\begin{itemize}
+\item \verb|Coercible s t|: \verb|s| and \verb|t| have bit-for-bit identical
+  run-time representation.
+\item For every type constructor, each type parameter has a role, determined by
+  the way in which the parameter is used in the definition of the type constructor.
+  \begin{itemize}
+  \item representational: type parameters of ordinary newtypes and datatypes
+  \item phantom: it does not occur in the definition of the type, or it occurs
+    only as a phantom parameter of another type constructor.
+  \item nominal: parameters that possibly affect the run-time representation of
+    a type, including parameters of a type/data family, non-uniform parameters
+    to GADTs, type classes.\\
+    Parameters of type variables are always nominal.
+  \item Users can specify the roles via annotation, and the compiler ensures that
+    role annotations cannot violate type safety.
+    \begin{verbatim}
+type role Map nominal representational
+    \end{verbatim}
+  \end{itemize}
+\item To decide whether two types are coercible:
+  \begin{itemize}
+  \item \textit{unwrapping} rule: for every \verb|newtype NT = MkNT t|,\\
+    we have \verb|Coercible t NT|.\\
+    This rule is available only if the corresponding newtype data constructor is
+    in scope.
+  \item \textit{lifting} rule: for every type constructor \verb|TC r p n|,\\
+    if \verb|Coercible r1 r2|,\\
+    we have \verb|Coercible (TC r1 p1 n) (TC r2 p2 n)|.
+  \item Coercible is an equivalence relation: reflexivity, symmetry, transitivity.
+  \item \textit{decomposition} rule: given non-newtype \verb|T|,\\
+    if \verb|Coercible (T r1 p1 n1) (T r2 p2 n2)|,\\
+    then \verb|Coercible r1 r2|, and \Verb[commandchars=\\\{\}]|n1 \mytilde n2|.
+  \item \textit{type application} rule: If \verb|Coercible t1 t2|,
+    where \verb|t1, t2 :: k1 -> k2|,
+    then \verb|Coercible (t1 x) (t2 x)|.
+  \end{itemize}
+\item The type system in the paper is more like the one in Section~\ref{sec:fcpro}:
+  types and kinds are not unified and coercions are homogeneous.
+\item New form of coercion: $[[GG |-co co : s1 ~ (k, p) s2]]$
+  \begin{itemize}
+  \item Nominal equality, written $[[~N]]$.
+    \begin{itemize}
+    \item The equality that the source Haskell type checker reasons about.
+    \item Type families introduce new nominal equalities.
+    \end{itemize}
+  \item Representational equality, written $[[~R]]$.
+    \begin{itemize}
+    \item The equality holds between two types that share the same run-time representation.
+    \item A subset of nominal equality.
+    \item A \verb|Coercible| constraint corresponds to a proposition of
+      representational equality.
+    \item New types introduce new representational roles.
+    \end{itemize}
+  \item Phantom equality, written $[[~P]]$, holds between any two types.
+  \end{itemize}
+\item Important type-safe cast:
+  \[ \drule{fc-typing-Cast-R} \]
+  The coercion $[[co]]$ must be a proof of representational equalities.
+\end{itemize}
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "../doc"
+%%% org-ref-default-bibliography: "../doc.bib"
+%%% End:

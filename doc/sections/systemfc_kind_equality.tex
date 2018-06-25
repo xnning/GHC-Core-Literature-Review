@@ -1,0 +1,83 @@
+\section{Explicit Kind Equality}
+
+System FC with Explicit Kind Equality, ICFP'13 \citep{weirich2013system}.
+
+\subsection{Motivation}
+
+System FC lacks kind equality proofs, as mentioned in Section~\ref{sec:fcpro}.
+This paper presents an approach based on dependent type systems with
+\hl{heterogeneous} equality and the \textit{Type-in-Type} axiom, yet it
+preserves the metatheoretic properties of FC.
+
+It enables
+
+\begin{itemize}
+\item Kind-indexed GADT: the datatype is indexed by both kind and type information.
+  \begin{verbatim}
+data TyRep :: \/ k. k -> * where
+  TyInt    :: TyRep Int
+  Ty Bool  :: TyRep Bool
+  TyMaybe  :: TyRep Maybe
+  TyApp    :: TyRep a -> TyRep b -> TyRep (a b)
+
+zero :: \/ (a : *). TyRep a -> a
+zero TyInt             = 0
+zero TyBool            = False
+zero (TyApp TyMaybe _) = Nothing
+  \end{verbatim}
+\item Promoted GADT: GADT are allowed to be used an as index.
+  \begin{verbatim}
+data Kind = Star | Arr Kind Kind
+
+data Ty :: Kind -> * where
+  TInt   :: Ty Star
+  TBool  :: Ty Star
+  TMaybe :: Ty (Arr Star Star)
+  TApp   :: Ty (Arr k1 k2) -> Ty k1 -> Ty k2
+
+data TyRep (k :: Kind) (t :: Ty k) where
+  TyInt   :: TyRep Star TInt
+  TyBool  :: TyRep Star TBool
+  TyMaybe :: TyRep (Arr Star Star) TMaybe
+  TyApp   :: TyRep (Arr k1 k2) a -> TyRep k1 b -> TyRep k2 (TApp a b)
+  \end{verbatim}
+\item Kind family
+  \begin{verbatim}
+kind family IK (k :: Kind)
+kind instance IK Star = *
+kind instance IK (Arr k1 k2) = IK k1 -> IK k2
+  \end{verbatim}
+\end{itemize}
+
+\subsection{Notes}
+
+\begin{itemize}
+\item In this work, the syntax of types and kinds are unified, allowing us to
+  reuse type coercions as kind coercions, with axoim $[[ star ]] : [[star]]$.\\
+  $[[s]], [[k]] ::= [[\/a : k . s]] \mid ...$ \hl{$\mid [[\/ cx : prop . s]] \mid [[s |> co]] \mid
+    [[s co]]$}\\
+  The type of coercion $[[prop]]$ is now separated from types. Namely 
+  coercion abstractions are separated from arrow types.\\
+  $[[prop]] ::= [[s1 ~ s2]]$
+\item Equalities are now \textit{heterogeneous}. In the definition of type
+  equalities $[[s1 ~ s2]]$, the type $[[s1]]$ and $[[s2]]$ could have kinds
+  $[[k1]]$ and $[[k2]]$ that have no syntactic relation to each other. A proof
+  $[[co]]$ of $[[s1 ~ s2]]$ implies not only that $[[s1]]$ and $[[s2]]$ are
+  equal, but also that their kinds are equal.
+\item Coercions are irrelevant to both the operational semantics and type equivalence.
+\item Important kinding rule:
+  \[ \drule{fc-kind-KCast} \]
+  Important coercion coherence rule:
+  \[ \drule{fc-co-CT-COH} \]
+  The use of kind coercions can be ignored when proving type equalities.
+  \[ \drule{fc-co-CT-EXT} \]
+  The new coercion form $[[kind co]]$ extracts the
+  proof of $[[k1 ~ k2]]$ from $[[co]]$.
+\item A tricky \verb|S_KPUSH| rule.
+\end{itemize}
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "../doc"
+%%% org-ref-default-bibliography: "../doc.bib"
+%%% End:

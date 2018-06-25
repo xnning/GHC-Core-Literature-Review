@@ -1,0 +1,107 @@
+\section{Levity Polymorphism}
+
+Levity Polymorphism, PLDI'17 \citep{eisenberg2017levity}.
+
+\subsection{Motivation}
+
+\begin{verbatim}
+bTwice :: forall a. Bool -> a -> (a -> a) -> a
+bTwice b x f = case b of True -> f (f x)
+                         False -> x
+\end{verbatim}
+
+Polymorphic function is supposed to work for any type of argument \verb|x|.
+However, the type of \verb|x| influences the calling convention, and hence the
+executable code. For example, for list \verb|x|, the function would be passed in
+a register pointing into the heap; for a float \verb|x|, it would be passed in a
+special floating-point register. 
+
+One simple but very slow solution: represent every value uniformly, as a
+pointer to a heap-allocated object.
+
+Most languages also support \textit{unboxed values} that are represented by the
+value itself rather than a pointer. Haskell classifies types by kinds. Lifted
+types have kind \verb|Type|, while unlifted types have kind \verb|#|.
+
+Current Instantiation Principle: all polymorphic type variables have kind \verb|Type|.
+However it introduces several problems. For example,
+\begin{verbatim}
+-> :: Type -> Type -> Type
+\end{verbatim}
+means \verb|Int# -> Int# -> Int#| is ill-typed.
+The current design is sub-kinding:
+
+\begin{verbatim}
+Type <: OpenKind
+#    <: OpenKind
+->   :: OpenKind -> OpenKind -> Type
+\end{verbatim}
+which is awkward and unprincipled.
+
+The idea of this paper is to \textit{replace sub-kinding with kind
+  polymorphism}. The main idea is
+
+\begin{verbatim}
+-- primitive
+TYPE :: Rep -> Type   
+
+-- definitions
+type Rep      = [UnaryRep] -- a type-level list
+data UnaryRep = PtrRep     -- boxed, lifted
+              | UPtrRep    -- boxed, unlifed
+              | IntRep     -- unboxed ints
+              | FloatRep   -- unboxed floats
+              | DoubleRep  -- unboxed doubles
+              | ...etc...
+type Lifted   = '[PtrRep]
+type Type     = TYPE Lifted
+\end{verbatim}
+
+\subsection{Notes}
+
+ \begin{tabular}{p{4cm}|p{4cm}|p{4cm}}
+   \hline\\
+   & \textbf{boxed}: represented by a pointer into the heap & \textbf{unboxed}: represented by the value itself \\
+   \hline\\
+   \textbf{lifted}: lazy; has one extra element beyond the usual ones representing a non-terminating computation (call by need) & \verb|Int|, \verb|Bool| & (Haskell represents lazy computation as thunks, so lifted can only be boxed) \\
+   \hline\\
+   \textbf{unlifted}: strict (call by value) & \verb|ByteArray#| & \verb|Int#|, \verb|Char#|\\
+   \hline
+ \end{tabular}
+  
+\begin{itemize}
+\item Any type that classifies values has kind \verb|TYPE r| for some
+  \verb|r :: Rep|. The type \verb|Rep| specifies how a value of that type is
+  represented, by  giving a list of \verb|UnaryRep|. A \verb|UnaryRep| specifies
+  how a single values is represented. Examples:
+\begin{verbatim}
+Int    :: TYPE '[PrtRep], TYPE Lifted, Type
+Int#   :: TYPE '[IntRep]
+Float# :: TYPE '[FloatRep]
+(Int, Bool)  :: Type
+Maybe Int    :: Type
+Maybe        :: Type -> Type
+\end{verbatim}
+\item Levity polymorphism: an abstraction over only the levity (lifted vs.
+  unlifted) of a type.
+\begin{verbatim}
+(->) :: forall (r1 :: Rep) (r2 :: Rep).
+        TYPE r1 -> TYPE r2 -> Type
+\end{verbatim}
+\item Restrict the use of levity polymorphism so that it can be compiled:
+  \begin{itemize}
+  \item Disallow levity-polymorphic binders.
+  \item Disallow levity-polymorphic function arguments.
+  \end{itemize}
+\item The correctness of levity polymorphism is proved by 1) defining $\mathcal{L}$:
+  a variant of System F that supports levity polymorphism 2) defining
+  $\mathcal{M}$: a $\lambda$-calculus in A-normal form, with operational
+  semantics working with an explicit stack and heap; 3) a type-erasing
+  compilation from $\mathcal{L}$ to $\mathcal{M}$, with correctness proofs.
+\end{itemize}
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "../doc"
+%%% org-ref-default-bibliography: "../doc.bib"
+%%% End:

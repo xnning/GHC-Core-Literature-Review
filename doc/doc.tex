@@ -1,0 +1,58 @@
+\documentclass{article}
+
+% AMS packages
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{mathtools}
+\usepackage{mdwlist}
+
+% Hyper links
+\usepackage{url}
+\usepackage[round]{natbib}
+\bibliographystyle{plainnat}
+\usepackage[colorlinks=true, urlcolor=blue, citecolor=blue]{hyperref}
+
+\usepackage{xspace}
+\usepackage{comment}
+\usepackage{xcolor}
+
+\usepackage{algpseudocode}
+
+\usepackage{ottalt}
+\inputott{ott-rules}
+
+\renewcommand\ottaltinferrule[4]{
+  \inferrule*[right=\scriptsize{#1}]
+    {#3}
+    {#4}
+}
+
+\usepackage{fancyvrb}
+
+\input{macro}
+
+\begin{document}
+
+\title{Literature Review of GHC Core}
+\author{Ningning Xie \\ \href{mailto:xnningxie@gmail.com}{xnningxie@gmail.com}}
+
+\maketitle
+% \tableofcontents
+
+\input{sections/introduction.tex}
+\input{sections/systemfc.mng}
+\input{sections/systemfcpro.mng}
+\input{sections/defer_type_error.mng}
+\input{sections/systemfc_kind_equality.mng}
+\input{sections/zero_cost_coercion.mng}
+\input{sections/levity_poly.mng}
+\input{sections/implementation.tex}
+
+\bibliography{doc.bib}
+\end{document}
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: t
+%%% End:
